@@ -1,3 +1,5 @@
+import logging
+
 from typing import Optional, List
 
 from psycopg2 import connect
@@ -6,7 +8,7 @@ from psycopg2.extras import RealDictCursor
 
 class DBClient:
 
-    def __init__(self, dbname: str, host: str, port: str, user: str, password: str) -> connect:
+    def __init__(self, dbname: str, host: str, port: str, user: str, password: str):
         """Initializing the connection
 
         Args:
@@ -24,13 +26,17 @@ class DBClient:
             password=password
         )
         self.conn.autocommit = True
-        self.curs = self.conn.cursor(cursor_factory=RealDictCursor)
+        self.cur = self.conn.cursor(cursor_factory=RealDictCursor)
+        logging.info(self.conn)
 
     def close(self) -> None:
         if not self.conn:
+            logging.info('Not connection')
             return
-        if self.curs:
-            self.curs.close()
+        if self.cur:
+            logging.info('Cursor the closed')
+            self.cur.close()
+        logging.info('Connection the closed')
         self.conn.close()
 
     def execute(self, query: str) -> None:
@@ -39,7 +45,8 @@ class DBClient:
         Args:
             query: query to the Postgres database
         """
-        self.curs.execute(str(query), None)
+        logging.debug(query)
+        self.cur.execute(str(query), None)
 
     def fetch_all(self, query: str) -> Optional[List[dict]]:
         """Executing a query to the Postgres database with returning data in the form of list
@@ -48,7 +55,7 @@ class DBClient:
             query: query to the Postgres database
         """
         self.execute(query)
-        records = self.curs.fetchall()
+        records = self.cur.fetchall()
         if records:
             rows = [dict(rec) for rec in records]
             return rows

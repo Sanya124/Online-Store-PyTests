@@ -62,24 +62,33 @@ class TestAllProducts:
     @pytest.mark.parametrize(
         'params',
         [
-            pytest.param({'size': 1}, id='Sorted by the quantity of products in the response'),
-            pytest.param({'size': 2, 'page': 1},
-                         id='Sorted by quantity and number page of products in the response'),
-            pytest.param({'size': 3, 'sort_attribute': 'price', 'page': 1},
-                         id='Sorted by quantity, page number and product attribute in the response'),
-            pytest.param({'page': 0, 'sort_attribute': 'quantity', 'sort_direction': 'asc', 'size': 4},
-                         id='Sorted by quantity, page number, product attribute in ascending in the response'),
+            pytest.param({}, id='Default parameters'),
+            pytest.param({'page': 0, 'size': 1, 'sort_attribute': 'price', 'sort_direction': 'desc'},
+                         id='?page=0&size=1&sort_attribute=price&sort_direction=desc'),
+            pytest.param({'page': 0, 'size': 1, 'sort_attribute': 'name', 'sort_direction': 'asc'},
+                         id='?page=0&size=1&sort_attribute=name&sort_direction=asc'),
+            pytest.param({'page': 1, 'size': 1, 'sort_attribute': 'quantity', 'sort_direction': 'desc'},
+                         id='?page=1&size=1&sort_attribute=quantity&sort_direction=desc'),
+            pytest.param({'page': 1, 'size': 1, 'sort_attribute': 'price', 'sort_direction': 'asc'},
+                         id='?page=1&size=1&sort_attribute=price&sort_direction=asc'),
+            pytest.param({'page': 1, 'size': 1, 'sort_attribute': 'name', 'sort_direction': 'desc'},
+                         id='?page=1&size=1&sort_attribute=name&sort_direction=desc'),
+            pytest.param({'page': 0, 'size': 1, 'sort_attribute': 'quantity', 'sort_direction': 'asc'},
+                         id='?page=0&size=1&sort_attribute=quantity&sort_direction=asc'),
         ]
     )
     def test_get_all_products_with_params(self, params: dict, postgres):
-        with step('Getting products by query parameters via API'):
-            api_data = ProductAPI().get_all(params=params).json()['products']
-
-        with step('Getting products by filters from DB'):
+        with step('Setting the parameters by default'):
+            # These are the values required to query the database
             field = params['sort_attribute'] if params.get('sort_attribute') else 'name'
             ascend = True if params.get('sort_direction') == 'asc' else False
             size = params.get('size', 50)
             page = params.get('page', 0)
+
+        with step('Getting products by query parameters via API'):
+            api_data = ProductAPI().get_all(params=params).json()['products']
+
+        with step('Getting products by filters from DB'):
             db_data = postgres.get_product_by_filter(field=field, ascend=ascend, size=size, page=page)
 
         with step('Checking count items DB <> API'):
